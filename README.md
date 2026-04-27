@@ -67,3 +67,57 @@ JWT 採 **RS256**，各 App 只驗 public key 不打 Identity API。
 ## 目錄定位
 
 本目錄是集團 monorepo（`/pandora/`）下的 working copy，獨立 GitHub repo `freeco-company/pandora-core-identity`，獨立部署。集團共用文件在 `../docs/`。
+
+---
+
+## 🛠 Local Development
+
+### Prerequisites
+
+- PHP 8.3+
+- Composer 2.x
+- MariaDB 10.11+（建議 `brew install mariadb`；母艦 pandora.js-store 已在用同一份）
+- Redis 7+（`brew install redis && brew services start redis`）— Phase 1 後 outbox / token blacklist 會用
+
+### Setup
+
+```bash
+# 1. 安裝依賴
+composer install
+
+# 2. 環境設定
+cp .env.example .env
+php artisan key:generate
+
+# 3. 建 DB（沿用母艦 root 密碼）
+mariadb -u root -p -e "CREATE DATABASE IF NOT EXISTS pandora_core_identity CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 4. 編輯 .env 設定 DB_PASSWORD（與母艦相同）
+
+# 5. Migrate
+php artisan migrate
+
+# 6. 啟動
+php artisan serve --port=8001
+```
+
+### Quality gates（CI 會跑）
+
+```bash
+./vendor/bin/pint --test          # 程式碼風格
+./vendor/bin/phpstan analyse      # 靜態分析（level 6）
+php artisan test                  # PHPUnit
+```
+
+CI 設定見 `.github/workflows/ci.yml`。
+
+### 已安裝主要套件
+
+| Package | 用途 | 對應 issue |
+|---|---|---|
+| `laravel/sanctum` | Token issuance wrapper | #3 |
+| `laravel/horizon` | Queue worker monitoring（outbox / webhook） | Step 2 |
+| `lcobucci/jwt` | RS256 JWT 簽發 / 驗證 | #3 |
+| `symfony/uid` | UUID v7（`group_user_id` 主鍵） | #2 |
+| `larastan/larastan` (dev) | PHPStan + Laravel rules | CI |
+| `laravel/pint` (dev) | Code style | CI |

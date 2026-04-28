@@ -27,7 +27,9 @@ class MirrorController
     public function customerUpsert(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'fp_customer_id' => ['required', 'integer'],
+            // 可 null：cutover 階段 母艦 OAuth login 走 platform 時還沒有 母艦 customer id
+            // （PlatformOAuthBridge 觸發），customer record 是後來透過 webhook 同步建立
+            'fp_customer_id' => ['nullable', 'integer'],
             'email_canonical' => ['nullable', 'string', 'max:255'],
             'phone_canonical' => ['nullable', 'string', 'max:32'],
             'display_name' => ['nullable', 'string', 'max:100'],

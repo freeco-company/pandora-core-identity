@@ -156,6 +156,28 @@ class AuthEndpointsExtraTest extends TestCase
         $this->assertSame(2, $user->identities()->count());
     }
 
+    public function test_internal_mirror_accepts_null_fp_customer_id_for_cutover_oauth(): void
+    {
+        // ADR-007 Phase 3 cutover：母艦 OAuth login 走 platform 時還沒有 customer id
+        // （PlatformOAuthBridge 送 null fp_customer_id），platform 必須能接受
+        config(['pandora_jwt.internal_secret' => 'test-secret']);
+
+        $res = $this->postJson('/api/internal/mirror/customer-upsert', [
+            'fp_customer_id' => null,
+            'email_canonical' => 'oauth-cutover@example.com',
+            'display_name' => 'cutover user',
+            'identities' => [
+                ['type' => 'google', 'value' => 'g-cutover-1', 'is_primary' => true],
+                ['type' => 'email', 'value' => 'oauth-cutover@example.com', 'is_primary' => true],
+            ],
+        ], [
+            'X-Pandora-Internal-Secret' => 'test-secret',
+        ]);
+
+        $res->assertOk()->assertJsonStructure(['group_user_id', 'mirrored_at']);
+        $this->assertSame(1, GroupUser::where('email_canonical', 'oauth-cutover@example.com')->count());
+    }
+
     public function test_internal_mirror_is_idempotent_with_existing_identity(): void
     {
         config(['pandora_jwt.internal_secret' => 'test-secret']);

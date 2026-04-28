@@ -1,0 +1,17 @@
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/
+        - config/
+        - database/
+        - routes/
+        - tests/
+    level: 6
+    ignoreErrors:
+        -
+            identifier: method.alreadyNarrowedType
+            path: tests/Unit/ExampleTest.php
+    excludePaths:
+        - ./bootstrap/cache/*

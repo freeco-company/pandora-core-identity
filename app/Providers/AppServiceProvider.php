@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\GroupUser;
+use App\Models\GroupUserIdentity;
+use App\Observers\GroupUserIdentityObserver;
+use App\Observers\GroupUserObserver;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Apple\AppleExtendSocialite;
@@ -22,5 +26,9 @@ class AppServiceProvider extends ServiceProvider
             (new LineExtendSocialite)->handle($event);
             (new AppleExtendSocialite)->handle($event);
         });
+
+        // ADR-007 Phase 1: identity 變動 → outbox publisher
+        GroupUser::observe(GroupUserObserver::class);
+        GroupUserIdentity::observe(GroupUserIdentityObserver::class);
     }
 }

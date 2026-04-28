@@ -44,6 +44,64 @@ Webhooks → 各 App
 
 JWT 採 **RS256**，各 App 只驗 public key 不打 Identity API。
 
+## 資料模型（Issue #2 完成）
+
+```mermaid
+erDiagram
+    group_users ||--o{ group_user_identities : "has many"
+    group_users ||--o{ group_user_consents : "has many"
+    group_users ||--o{ group_user_merge_log : "(by surviving_id, no FK)"
+
+    group_users {
+        uuid id PK "v7"
+        string email_canonical UK "lowercase + trim"
+        string phone_canonical UK "digits + plus only"
+        string display_name
+        string gender
+        date birthday
+        string status "active/suspended/pending_verification"
+        timestamp last_login_at
+        timestamp deleted_at "soft delete (個資法 §11 30 天冷卻)"
+    }
+
+    group_user_identities {
+        bigint id PK
+        uuid group_user_id FK "cascade delete"
+        string type "email/phone/google/line/apple"
+        string value
+        timestamp verified_at
+        boolean is_primary
+        json raw_payload "OAuth callback raw"
+    }
+    group_user_identities ||--|| group_user_identities : "UNIQUE(type, value)"
+
+    group_user_consents {
+        bigint id PK
+        uuid group_user_id FK
+        string consent_type "tos/privacy/marketing_email/data_export"
+        string version "條款版本"
+        timestamp granted_at
+        timestamp revoked_at "null = 仍生效"
+        string source "fp/dodo/fairy-academy"
+        string granted_ip
+        text granted_user_agent
+    }
+
+    group_user_merge_log {
+        bigint id PK
+        uuid surviving_group_user_id "no FK (avoid cascade loop)"
+        uuid absorbed_group_user_id "no FK"
+        string absorbed_email
+        string absorbed_phone
+        json absorbed_identities
+        string reason "auto:phone+placeholder/manual:platform-ui/..."
+        json snapshot
+        string actor "system/admin:<id>/self:<id>"
+    }
+```
+
+**對齊婕樂纖既有 schema**：`group_user_identities` 1:1 mapping `customer_identities`、`group_user_merge_log` 1:1 mapping `customer_merge_log`，方便 Step 1 鏡寫不需要 transformer 邏輯。
+
 ## 6-Step Migration Plan
 
 | Step | 週 | 內容 |

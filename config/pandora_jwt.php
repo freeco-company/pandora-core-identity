@@ -37,4 +37,12 @@ return [
     | 簽 token 時 audience 必須在這個 list 裡。新增 App → 新增 code。
     */
     'allowed_products' => ['fp', 'dodo', 'fairy-academy', 'fairy-skin', 'fairy-calendar'],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Internal Secret (for shadow-mirror & internal-only endpoints)
+    |--------------------------------------------------------------------------
+    | Dev/staging 用 shared secret header 認證，prod 改 mTLS（ADR-006）。
+    */
+    'internal_secret' => env('PANDORA_INTERNAL_SECRET'),
 ];

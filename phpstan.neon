@@ -13,5 +13,13 @@ parameters:
         -
             identifier: method.alreadyNarrowedType
             path: tests/Unit/ExampleTest.php
+        # Socialite::driver() returns Provider interface but at runtime returns AbstractProvider with stateless()
+        -
+            message: '#Call to an undefined method Laravel\\Socialite\\Contracts\\Provider::stateless\(\)#'
+            path: app/Http/Controllers/Auth/OAuthController.php
+        # Mockery dynamic property assignment is intentional for Socialite User mocking
+        -
+            identifier: property.notFound
+            path: tests/Feature/Auth/AuthEndpointsExtraTest.php
     excludePaths:
         - ./bootstrap/cache/*

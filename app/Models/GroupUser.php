@@ -17,6 +17,9 @@ use Illuminate\Support\Carbon;
  * @property ?string $display_name
  * @property ?string $gender
  * @property ?Carbon $birthday
+ * @property ?string $password bcrypt hash, null = OAuth-only user
+ * @property ?Carbon $email_verified_at
+ * @property ?string $email_verification_token
  * @property string $status
  * @property ?Carbon $last_login_at
  *
@@ -38,13 +41,23 @@ class GroupUser extends Model
         'display_name',
         'gender',
         'birthday',
+        'password',
+        'email_verified_at',
+        'email_verification_token',
         'status',
         'last_login_at',
+    ];
+
+    protected $hidden = [
+        'password',
+        'email_verification_token',
     ];
 
     protected $casts = [
         'birthday' => 'date',
         'last_login_at' => 'datetime',
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 
     /**

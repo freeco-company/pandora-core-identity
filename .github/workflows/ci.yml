@@ -73,5 +73,8 @@ jobs:
       - name: Migrate
         run: php artisan migrate --no-interaction
 
+      - name: Generate dev JWT keypair (for tests)
+        run: php artisan pandora:jwt:keygen --force
+
       - name: PHPUnit
         run: php artisan test --without-tty

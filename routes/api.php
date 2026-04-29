@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\EmailAuthController;
 use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\Internal\MirrorController;
+use App\Http\Controllers\Internal\ReconcileController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -32,4 +33,8 @@ Route::prefix('v1')->group(function () {
 // Internal endpoints (#9 shadow-mirror; secured by shared secret)
 Route::prefix('internal')->middleware(['pandora.internal'])->group(function () {
     Route::post('mirror/customer-upsert', [MirrorController::class, 'customerUpsert']);
+
+    // ADR-007 §6 risk #4 mitigation (b) — consumer reconcile (delta pull).
+    // Periodic safety net for missed identity webhooks; PII-free response.
+    Route::get('reconcile/users', [ReconcileController::class, 'users']);
 });

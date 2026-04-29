@@ -42,6 +42,7 @@ use Illuminate\Support\Carbon;
 class ReconcileController
 {
     private const DEFAULT_LIMIT = 100;
+
     private const MAX_LIMIT = 500;
 
     public function users(Request $request): JsonResponse

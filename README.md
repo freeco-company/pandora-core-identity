@@ -2,10 +2,13 @@
 
 > 集團（潘朵拉 / Pandora）單一身份源 — 跨所有 App 的 user / OAuth / JWT / 帳號合併 / consent 管理。
 
-**狀態**：🚧 建置中（2026-04-28 啟動，預計 10 週完成 Step 1-6 漸進切換）
-**技術棧**：Laravel 13 + MariaDB 10.11 + Redis（與母艦婕樂纖同棧）
-**部署**：獨立部署，網域待定（`id.pandora.fairy` 暫定），Cloudflare 前置
-**主要 ADR**：[ADR-001 Identity Service](../docs/adr/ADR-001-identity-service.md)
+**狀態**：✅ **Production**（2026-04-28 上線；Phase 1-4 + A-E 漸進切換全部完成；49/50 母艦客戶已遷移）
+**技術棧**：Laravel 13 + MariaDB 10.11（與母艦婕樂纖同棧）
+**部署**：`https://id.js-store.com.tw` — Linode 同台 4GB（與母艦共住）+ Let's Encrypt + systemd cron schedule:run + daily mysqldump 備份
+**主要 ADR**：
+  - [ADR-007 同步策略修訂](../docs/adr/ADR-007-identity-sync-strategy-revision.md) — **最新 baseline，必讀**
+  - [ADR-001 Identity Service](../docs/adr/ADR-001-identity-service.md) — 部分作廢（§2 §3 仍生效）
+  - [ADR-006 部署選型](../docs/adr/ADR-006-identity-deployment.md) — Deferred（升雲觸發條件未達）
 
 ---
 
@@ -102,18 +105,28 @@ erDiagram
 
 **對齊婕樂纖既有 schema**：`group_user_identities` 1:1 mapping `customer_identities`、`group_user_merge_log` 1:1 mapping `customer_merge_log`，方便 Step 1 鏡寫不需要 transformer 邏輯。
 
-## 6-Step Migration Plan
+## Migration 結果（2026-04-28 完成）
 
-| Step | 週 | 內容 |
+ADR-001 原 6-Step 10 週 dual-write 計畫**作廢**（cross-check 後實際 < 10 真實客戶，無需灰度）。改採 ADR-007 的 4-Phase + A-E 漸進切換，**一日內完成**：
+
+| Phase | 內容 | PR |
 |---|---|---|
-| 1 | W1-W2 | Identity Service 上線 shadow mode |
-| 2 | W3-W4 | 婕樂纖 dual-write |
-| 3 | W5 | 歷史資料 backfill |
-| 4 | W6-W7 | Cutover read（婕樂纖 read 走 platform）|
-| 5 | W8-W9 | 移除母艦本地 write |
-| 6 | W10 + 6 個月觀察 | 撤舊欄位 |
+| 1 | Platform outbox + webhook publisher | [pandora-core-identity #12](https://github.com/freeco-company/pandora-core-identity/pull/12) ✅ |
+| 2 | 母艦 webhook receiver + backfill | [pandora-js-store #13](https://github.com/freeco-company/pandora-js-store/pull/13) ✅ |
+| 3 | 母艦 OAuth cutover（legacy/shadow/cutover 三模式 + 4 道防線） | [pandora-js-store #14](https://github.com/freeco-company/pandora-js-store/pull/14) ✅ |
+| 4 | 朵朵 IdentityClient SDK + minimal mirror | [dodo #2](https://github.com/freeco-company/dodo/pull/2) ✅ |
 
-詳見 [ADR-001 §4](../docs/adr/ADR-001-identity-service.md)。
+A-E 漸進切換（同日）：接通 wiring → backfill 49/50 客戶 → shadow → canary（whitelist 4 個自己 email 24h）→ full cutover（whitelist 清空，全 50 客戶走 platform）。
+
+**End State**：
+```
+Pandora Core Identity (single source of truth, 含完整 PII)
+    ↓ webhook publisher (HMAC + retry + dead_letter)
+母艦 customers (read-only mirror，完整 PII，供客服/出貨/加盟)
+朵朵 dodo_users (minimal mirror：uuid + display + tier，無 PII)
+```
+
+詳見 [ADR-007](../docs/adr/ADR-007-identity-sync-strategy-revision.md)、[HANDOFF.md §B](../HANDOFF.md)。
 
 ## 不做什麼
 
